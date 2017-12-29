@@ -8,7 +8,7 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 from skimage.feature import hog
 from sklearn.model_selection import train_test_split
-from lane_detection import process_image_vid as draw_lane_lines
+#from lane_detection import process_image_vid as draw_lane_lines
 import os
 from moviepy.editor import VideoFileClip
 import pickle
@@ -132,39 +132,48 @@ def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
 notcars = glob.glob('data/non-vehicles/**/*.png')
 cars = glob.glob('data/vehicles/**/*.png')
 
-notcars = notcars[0:500]
-cars = cars[0:500]
+#notcars = notcars[0:500]
+#cars = cars[0:500]
 
-color_space = 'RGB'  # Can be RGB, HSV, LUV, HLS, YUV, YCrCb
-orient = 9  # HOG orientations
-pix_per_cell = 8  # HOG pixels per cell
-cell_per_block = 2  # HOG cells per block
-hog_channel = 'ALL'  # Can be 0, 1, 2, or "ALL"
-spatial_size = (32, 32)  # Spatial binning dimensions
-hist_bins = 32  # Number of histogram bins
-spatial_feat = True  # Spatial features on or off
-hist_feat = True  # Histogram features on or off
-hog_feat = True  # HOG features on or off
+class Params:
+	def __init__(self, color_space='RGB', orient=9, pix_per_cell=8, cell_per_block=2, hog_channel='ALL',
+				 spatial_size=(32,32), hist_bins=32, spatial_feat=True, hist_feat=True, hog_feat=True, rand_state=None):
+		self.color_space = color_space
+		self.orient = orient
+		self.pix_per_cell = pix_per_cell
+		self.cell_per_block = cell_per_block
+		self.hog_channel = hog_channel
+		self.spatial_size = spatial_size
+		self.hist_bins = hist_bins
+		self.spatial_feat = spatial_feat
+		self.hist_feat = hist_feat
+		self.hog_feat = hog_feat
+		self.rand_state = rand_state
+
+	def __str__(self):
+		return str("color_space: " + self.color_space +  ", orient: " + str(self.orient) +  ", pix_per_cell: " + str(self.pix_per_cell) + ", cell_per_block: " + str(self.cell_per_block) + ", hog_channel: " + str(self.hog_channel) + \
+			   ", spatial_size: " + str(self.spatial_size) + ", hist_bins: " + str(self.hist_bins) + ", spatial_feat: " + str(self.spatial_feat) + ", hist_feat: " + str(self.hist_feat) + ", hog_feat :" + str(self.hog_feat) + ", rand_state: " + str(self.rand_state))
+
 
 ystart = 400
 ystop = 656
 scale = 1.5
 
 
-def train():
+def train(params):
 
-	car_features = extract_features(cars, color_space=color_space,
-									spatial_size=spatial_size, hist_bins=hist_bins,
-									orient=orient, pix_per_cell=pix_per_cell,
-									cell_per_block=cell_per_block,
-									hog_channel=hog_channel, spatial_feat=spatial_feat,
-									hist_feat=hist_feat, hog_feat=hog_feat)
-	notcar_features = extract_features(notcars, color_space=color_space,
-									   spatial_size=spatial_size, hist_bins=hist_bins,
-									   orient=orient, pix_per_cell=pix_per_cell,
-									   cell_per_block=cell_per_block,
-									   hog_channel=hog_channel, spatial_feat=spatial_feat,
-									   hist_feat=hist_feat, hog_feat=hog_feat)
+	car_features = extract_features(cars, color_space=params.color_space,
+									spatial_size=params.spatial_size, hist_bins=params.hist_bins,
+									orient=params.orient, pix_per_cell=params.pix_per_cell,
+									cell_per_block=params.cell_per_block,
+									hog_channel=params.hog_channel, spatial_feat=params.spatial_feat,
+									hist_feat=params.hist_feat, hog_feat=params.hog_feat)
+	notcar_features = extract_features(notcars, color_space=params.color_space,
+									   spatial_size=params.spatial_size, hist_bins=params.hist_bins,
+									   orient=params.orient, pix_per_cell=params.pix_per_cell,
+									   cell_per_block=params.cell_per_block,
+									   hog_channel=params.hog_channel, spatial_feat=params.spatial_feat,
+									   hist_feat=params.hist_feat, hog_feat=params.hog_feat)
 
 	X = np.vstack((car_features, notcar_features)).astype(np.float64)
 
@@ -177,22 +186,24 @@ def train():
 	y = np.hstack((np.ones(len(car_features)), np.zeros(len(notcar_features))))
 
 	# Split up data into randomized training and test sets
-	rand_state = np.random.randint(0, 100)
+	if params.rand_state is None:
+		rand_state = np.random.randint(0, 100)
+	else:
+		rand_state = params.rand_state
+
 	X_train, X_test, y_train, y_test = train_test_split(
 		scaled_X, y, test_size=0.2, random_state=rand_state)
 
-	print('Using:', orient, 'orientations', pix_per_cell,
-		  'pixels per cell and', cell_per_block, 'cells per block')
-	print('Feature vector length:', len(X_train[0]))
 	# Use a linear SVC
 	svc = LinearSVC()
 	# Check the training time for the SVC
 	svc.fit(X_train, y_train)
 
 	# Check the score of the SVC
-	print('Test Accuracy of SVC = ', round(svc.score(X_test, y_test), 4))
+	accuracy = round(svc.score(X_test, y_test), 4)
+	print('Test Accuracy of SVC = ', accuracy)
 	# Check the prediction time for a single sample
-	return X_scaler, svc
+	return X_scaler, svc, accuracy
 
 
 def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
@@ -317,8 +328,7 @@ def draw_real_boxes(image, box_list):
 
 	return draw_img
 
-
-def imgage_process(image):
+def imgage_process(image, params):
 
 	svc_model_file = 'svc_pickle.p'
 	if os.path.exists(svc_model_file):
@@ -326,15 +336,15 @@ def imgage_process(image):
 		svc = dist_pickle["svc"]
 		X_scaler = dist_pickle["scaler"]
 	else:
-		X_scaler, svc = train()
+		X_scaler, svc, _ = train(params)
 		with open(svc_model_file, 'wb') as handle:
 			pickle.dump({"svc": svc, "scaler": X_scaler}, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 	box_img, box_list = find_cars(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
 
-	draw_img = draw_lane_lines(image)
+	#draw_img = draw_lane_lines(image)
 
-	draw_img = draw_real_boxes(draw_img, box_list)
+	draw_img = draw_real_boxes(image, box_list)
 
 	draw_img_scaled = cv2.resize(draw_img, (0,0), fx=0.5, fy=0.5)
 	box_img_scaled = cv2.resize(box_img, (0,0), fx=0.5, fy=0.5)
@@ -352,6 +362,7 @@ def process_video(video, video_output):
 	clip.write_videofile(video_output, audio=False, verbose=False, progress_bar=False)
 
 
+'''
 if __name__ == '__main__':
 	image = mpimg.imread('test_images/test1.jpg')
 	p_image = imgage_process(image)
@@ -359,3 +370,4 @@ if __name__ == '__main__':
 	#plt.show()
 
 	#process_video("test_video.mp4", "output_videos/test_video.mp4")
+'''
