@@ -116,24 +116,11 @@ def extract_features(imgs, color_space='RGB', spatial_size=(32, 32),
 	return features
 
 
-
-# Define a function to draw bounding boxes
-def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
-	# Make a copy of the image
-	imcopy = np.copy(img)
-	# Iterate through the bounding boxes
-	for bbox in bboxes:
-		# Draw a rectangle given bbox coordinates
-		cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
-	# Return the image copy with boxes drawn
-	return imcopy
-
-
 notcars = glob.glob('data/non-vehicles/**/*.png')
 cars = glob.glob('data/vehicles/**/*.png')
 
-#notcars = notcars[0:500]
-#cars = cars[0:500]
+#notcars = notcars[0:1000]
+#cars = cars[0:1000]
 
 class Params:
 	def __init__(self, color_space='RGB', orient=9, pix_per_cell=8, cell_per_block=2, hog_channel='ALL',
@@ -194,10 +181,17 @@ def train(params):
 	X_train, X_test, y_train, y_test = train_test_split(
 		scaled_X, y, test_size=0.2, random_state=rand_state)
 
-	# Use a linear SVC
-	svc = LinearSVC()
-	# Check the training time for the SVC
-	svc.fit(X_train, y_train)
+	svc_model_file = 'svc_pickle.p'
+	if os.path.exists(svc_model_file):
+		dist_pickle = pickle.load(open(svc_model_file, "rb"))
+		svc = dist_pickle["svc"]
+		X_scaler = dist_pickle["scaler"]
+	else:
+		svc = LinearSVC()
+		svc.fit(X_train, y_train)
+		with open(svc_model_file, 'wb') as handle:
+			pickle.dump({"svc": svc, "scaler": X_scaler}, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 
 	# Check the score of the SVC
 	accuracy = round(svc.score(X_test, y_test), 4)
@@ -206,7 +200,19 @@ def train(params):
 	return X_scaler, svc, accuracy
 
 
-def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
+
+# Define a function to draw bounding boxes
+def draw_boxes(img, bboxes, color=(0, 0, 255), thick=6):
+	# Make a copy of the image
+	imcopy = np.copy(img)
+	# Iterate through the bounding boxes
+	for bbox in bboxes:
+		# Draw a rectangle given bbox coordinates
+		cv2.rectangle(imcopy, bbox[0], bbox[1], color, thick)
+	# Return the image copy with boxes drawn
+	return imcopy
+
+def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins, draw_all_boxes=False):
 	draw_img = np.copy(img)
 	img = img.astype(np.float32) / 255
 
@@ -263,6 +269,15 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 				np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))
 			# test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))
 			test_prediction = svc.predict(test_features)
+
+			if draw_all_boxes:
+				xbox_left = np.int(xleft * scale)
+				ytop_draw = np.int(ytop * scale)
+				win_draw = np.int(window * scale)
+				bbox_list.append(
+					((xbox_left, ytop_draw + ystart), (xbox_left + win_draw, ytop_draw + win_draw + ystart)))
+				cv2.rectangle(draw_img, (xbox_left, ytop_draw + ystart),
+							  (xbox_left + win_draw, ytop_draw + win_draw + ystart), (255, 0, 0), 6)
 
 			if test_prediction == 1:
 				xbox_left = np.int(xleft * scale)
@@ -336,11 +351,12 @@ def imgage_process(image, params):
 		svc = dist_pickle["svc"]
 		X_scaler = dist_pickle["scaler"]
 	else:
-		X_scaler, svc, _ = train(params)
+		X_scaler, svc = train(params, cars, notcars)
 		with open(svc_model_file, 'wb') as handle:
 			pickle.dump({"svc": svc, "scaler": X_scaler}, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-	box_img, box_list = find_cars(image, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins)
+
+	box_img, box_list = find_cars(image, ystart, ystop, scale, svc, X_scaler, params.orient, params.pix_per_cell, params.cell_per_block, params.spatial_size, params.hist_bins)
 
 	#draw_img = draw_lane_lines(image)
 
@@ -361,13 +377,13 @@ def process_video(video, video_output):
 	clip = clip1.fl_image(imgage_process)
 	clip.write_videofile(video_output, audio=False, verbose=False, progress_bar=False)
 
-
-'''
 if __name__ == '__main__':
 	image = mpimg.imread('test_images/test1.jpg')
-	p_image = imgage_process(image)
+	params = Params(color_space='YCrCb', orient=12, pix_per_cell=8, cell_per_block=2, hog_channel='ALL',
+					spatial_size=(32,32), hist_bins=48,spatial_feat=True, hist_feat=True, hog_feat=True)
+
+	p_image = imgage_process(image, params)
 	#plt.imshow(p_image)
 	#plt.show()
 
 	#process_video("test_video.mp4", "output_videos/test_video.mp4")
-'''
