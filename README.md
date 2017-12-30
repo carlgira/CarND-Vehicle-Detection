@@ -1,8 +1,3 @@
-## Writeup Template
-### You can use this file as a template for your writeup if you want to submit it as a markdown file, but feel free to use some other method and submit a pdf if you prefer.
-
----
-
 **Vehicle Detection Project**
 
 The goals / steps of this project are the following:
@@ -38,22 +33,31 @@ You're reading it!
 
 #### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
+The code for this step is contained the section **"Histogram of Oriented Gradients (HOG)"**.
 
 I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
-I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
-
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
-
+Here is an example using the `RGB` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
 
 ![alt text][image2]
 
+For deciding the parameters i build a random generator creating 100 possible combinations for the LinearSVC. I train the model using a subset of 4000 images. You can see the random generator in the section **Tunning HOG parameters**
+
+I show the first 20 combinations:
+
+7  |  YUV          |  12.0    |  8.0           |  4.0             |  0            |  (32, 32)      |  40.0       |  6.65   |  0.99
+65  |  YCrCb        |  14.0    |  10.0          |  3.0             |  0            |  (16, 16)      |  32.0       |  5.31   |  0.9875
+16  |  RGB          |  12.0    |  6.0           |  3.0             |  0            |  (48, 48)      |  36.0       |  9.0    |  0.9875
+83  |  RGB          |  9.0     |  8.0           |  4.0             |  0            |  (32, 32)      |  48.0       |  7.02   |  0.9875
+
+
+
+
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
-I tried various combinations of parameters and...
+
 
 #### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
