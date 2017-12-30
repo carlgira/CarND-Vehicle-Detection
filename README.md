@@ -13,7 +13,7 @@ The goals / steps of this project are the following:
 
 - **Readme.md :** Writeup of project (this file)
 - **Vehicle-Detection.ipynb :** Notebook with all the code and notes.
-- **lsvc_hog_params.csv:** List of tested parameters for the extraction of HOG features
+- **lsvc_hog_params.csv:** List of tested parameters the Linear  SVM
 - **svc_pickle.p:** Saved LinearSVC model
 - **output_videos:** Output videos
 
