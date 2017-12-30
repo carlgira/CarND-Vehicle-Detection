@@ -151,7 +151,6 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 ![alt text][image8]
 
-![alt text][image9]
 ---
 
 ### Discussion
