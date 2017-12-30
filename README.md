@@ -1,4 +1,4 @@
-**Vehicle Detection Project**
+# Vehicle Detection Project
 
 The goals / steps of this project are the following:
 
@@ -9,6 +9,14 @@ The goals / steps of this project are the following:
 * Run your pipeline on a video stream (start with the test_video.mp4 and later implement on full project_video.mp4) and create a heat map of recurring detections frame by frame to reject outliers and follow detected vehicles.
 * Estimate a bounding box for vehicles detected.
 
+**Files in project**
+
+- **Readme.md :** Writeup of project (this file)
+- **Vehicle-Detection.ipynb :** Notebook with all the code and notes.
+- **lsvc_hog_params.csv:** List of tested parameters for the extraction of HOG features
+- **svc_pickle.p:** Saved LinearSVC model
+- **output_videos:** Output videos
+
 [//]: # (Image References)
 [image1]: ./examples/car_not_car.png
 [image2]: ./examples/HOG_example.jpg
@@ -17,7 +25,7 @@ The goals / steps of this project are the following:
 [image5]: ./examples/bboxes_and_heat.png
 [image6]: ./examples/labels_map.png
 [image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+[video1]: ./output_videos/project_video.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -47,33 +55,80 @@ For deciding the parameters i build a random generator creating 100 possible com
 
 I show the first 20 combinations:
 
-7  |  YUV          |  12.0    |  8.0           |  4.0             |  0            |  (32, 32)      |  40.0       |  6.65   |  0.99
-65  |  YCrCb        |  14.0    |  10.0          |  3.0             |  0            |  (16, 16)      |  32.0       |  5.31   |  0.9875
-16  |  RGB          |  12.0    |  6.0           |  3.0             |  0            |  (48, 48)      |  36.0       |  9.0    |  0.9875
-83  |  RGB          |  9.0     |  8.0           |  4.0             |  0            |  (32, 32)      |  48.0       |  7.02   |  0.9875
-
-
-
+colorSpace|orient|pix_per_cell|cell_per_block|hogChannel|spatialSize|histBins|time |accuracy
+----------|------|------------|--------------|----------|-----------|--------|-----|--------
+YCrCb      |7.0   |8.0         |2.0           |ALL        |(32, 32)    |36.0     |12.84|1.0
+YCrCb      |9.0   |8.0         |3.0           |ALL        |(16, 16)    |48.0     |12.65|0.9975
+YUV        |9.0   |8.0         |4.0           |ALL        |(48, 48)    |24.0     |14.04|0.9975
+HSV        |9.0   |6.0         |3.0           |ALL        |(24, 24)    |28.0     |14.65|0.9975
+YCrCb      |12.0  |9.0         |4.0           |ALL        |(24, 24)    |32.0     |11.02|0.995
+HSV        |12.0  |10.0        |2.0           |ALL        |(16, 16)    |24.0     |9.39 |0.995
+HSV        |14.0  |6.0         |3.0           |2          |(24, 24)    |36.0     |7.22 |0.995
+YCrCb      |5.0   |9.0         |4.0           |ALL        |(24, 24)    |48.0     |10.86|0.995
+YUV        |5.0   |8.0         |3.0           |ALL        |(32, 32)    |32.0     |12.74|0.995
+HLS        |14.0  |7.0         |3.0           |1          |(48, 48)    |48.0     |7.55 |0.9925
+YUV        |12.0  |10.0        |3.0           |ALL        |(16, 16)    |36.0     |9.36 |0.9925
+RGB        |9.0   |7.0         |2.0           |ALL        |(16, 16)    |32.0     |12.18|0.9925
+RGB        |14.0  |8.0         |3.0           |2          |(40, 40)    |48.0     |7.96 |0.9925
+RGB        |12.0  |7.0         |3.0           |1          |(24, 24)    |48.0     |6.24 |0.9925
+YUV        |9.0   |6.0         |4.0           |ALL        |(48, 48)    |24.0     |23.8 |0.9925
+LUV        |14.0  |8.0         |3.0           |0          |(40, 40)    |40.0     |9.42 |0.9925
+RGB        |12.0  |8.0         |3.0           |ALL        |(24, 24)    |36.0     |12.76|0.99
+YCrCb      |14.0  |6.0         |4.0           |ALL        |(24, 24)    |48.0     |22.27|0.99
+HSV        |12.0  |7.0         |2.0           |ALL        |(16, 16)    |32.0     |15.32|0.99
+RGB        |14.0  |7.0         |4.0           |1.0        |(48, 48)    |28.0     |9.69 |0.99
+YCrCb      |12.0  |6.0         |3.0           |ALL        |(32, 32)    |40.0     |18.0 |0.99
+LUV        |9.0   |8.0         |4.0           |0          |(32, 32)    |32.0     |6.21 |0.99
+RGB        |7.0   |9.0         |2.0           |ALL        |(40, 40)    |48.0     |12.37|0.99
+YUV        |12.0  |8.0         |4.0           |0          |(32, 32)    |40.0     |6.65 |0.99
+YCrCb      |14.0  |10.0        |3.0           |0          |(16, 16)    |32.0     |5.31 |0.9875
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
+- Always use the three types of features activating the flags spatial_feat_values, hist_feat_values,hog_feat_values. I dit not include the flags in the table because the results where bad without one or two of the features. (i did some previous calculation)
+- Is clear that is useful to use **ALL** for the channels of the HOG.
+- For the **color space** there is a tendency to use the **YCrCb, or RGB**.
+- For the **orient** variable is seems to be better to use a higher value than the default, something around **12**
+- A higger value on the numbers of bins seems to work better, set to **48**.
+- The pix_per_cell, cell_per_block and the spatial_size seems to work well with the default values.
 
+The final configuration is this:
+
+```python
+params = Params(color_space='YCrCb', 
+                orient=12, pix_per_cell=8, 
+                cell_per_block=2, 
+                hog_channel='ALL',
+                spatial_size=(32,32), 
+                hist_bins=48, 
+                spatial_feat=True, 
+                hist_feat=True, 
+                hog_feat=True)
+```
 
 #### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using...
+I train a Linear SVM, usign the hog and color features. I tune the parameters used for the hog features doing some test runs.
+
+After tuning the parameters the accuracy of the model reach **0.9994**
 
 ### Sliding Window Search
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+You can see the code in the section titled "Sliding Window Search". The method combines HOG and color feature extraction with a sliding window search, but rather than perform feature extraction on each window individually which can be time consuming, the HOG features are extracted for the entire image and then these full-image features are subsampled according to the size of the window and then fed to the classifier. The overlaping of bounding boxes was on 50%.
+
+The method performs the classifier prediction and returns a list of boxes corresponding with the positions of the car predictions.
+
+The image below shows the first attempt at using find_cars on one of the test images, using a single window size:
 
 ![alt text][image3]
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
+Ultimately I searched on three scales using a linear SVM using the hog and color features as input. The tuning of the model was done previously finding optimus parametes for the feature extraction.
+
+The resulting rectagles after passign the linear SVM looks like this.
 
 ![alt text][image4]
 ---
@@ -81,12 +136,12 @@ Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spat
 ### Video Implementation
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (somewhat wobbly or unstable bounding boxes are ok as long as you are identifying the vehicles most of the time with minimal false positives.)
-Here's a [link to my video result](./project_video.mp4)
+Here's a [video1](./project_video.mp4)
 
 
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
-I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected. 
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
