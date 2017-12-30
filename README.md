@@ -145,17 +145,7 @@ I recorded the positions of positive detections in each frame of the video.  Fro
 
 Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
 
-### Here are six frames and their corresponding heatmaps:
-
 ![alt text][image5]
-
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
-
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
-
-
 
 ---
 
@@ -163,5 +153,10 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+Most part of the implemention of the functions were on the course itself, so the main problem of the project reside on the tunning of the parameters. Thats why i build a random generator of parameters to specially tune the values used for the linear SVM. After making some runs and getting 100 different combinations of parameters i was able to choose ones that help me get an accuracy on the test set of 0.9994.
 
+The model behaves well with the project video, but i doubt that it will generalize for other cases. The model will probably fail with other lighting conditions or simply usign a type of car that is not in the dataset (a truck). 
+
+The pipeline is able to detect and eliminate most of the false positives, there are still one or two errors in the video.
+
+For making a more robust model it would be necesary lots of more data, with other types of vehicles in other positions and different light conditions, and of course use state of the art neural network architecture for this task.
