@@ -53,9 +53,9 @@ Here is an example using the `RGB` color space and HOG parameters of `orientatio
 
 ![alt text][image2]
 
-For deciding the parameters i build a random generator creating 100 possible combinations for the LinearSVC. I train the model using a subset of 4000 images. You can see the random generator in the section **Tunning HOG parameters**
+For deciding the parameters i build a random generator creating 100 possible combinations for the LinearSVC. I train those models using a subset of dataset (1/4 of all images). You can see the random generator in the section **Tuning HOG parameters**
 
-I show the first 20 combinations:
+I show the first 20 combinations, with their train time and accuracy:
 
 colorSpace|orient|pix_per_cell|cell_per_block|hogChannel|spatialSize|histBins|time |accuracy
 ----------|------|------------|--------------|----------|-----------|--------|-----|--------
@@ -87,12 +87,14 @@ YCrCb      |14.0  |10.0        |3.0           |0          |(16, 16)    |32.0    
 
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
-- Always use the three types of features activating the flags spatial_feat_values, hist_feat_values,hog_feat_values. I dit not include the flags in the table because the results where bad without one or two of the features. (i did some previous calculation)
+Using the data of the previous table is possible to infer:
+
+- Always use the three types of features activating the flags spatial_feat_values, hist_feat_values,hog_feat_values. I dit not include the flags in the table because the results where in average worse without one or two of the features. (i did some previous calculation)
 - Is clear that is useful to use **ALL** for the channels of the HOG.
 - For the **color space** there is a tendency to use the **YCrCb, or RGB**.
 - For the **orient** variable is seems to be better to use a higher value than the default, something around **12**
-- A higger value on the numbers of bins seems to work better, set to **48**.
-- The pix_per_cell, cell_per_block and the spatial_size seems to work well with the default values.
+- A higher value on the **numbers of bins** seems to work better, set to **48**.
+- The **pix_per_cell, cell_per_block and the spatial_size seems** seems to work well with the default values.
 
 The final configuration is this:
 
@@ -110,27 +112,27 @@ params = Params(color_space='YCrCb',
 
 #### 3. Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I train a Linear SVM, usign the hog and color features. I tune the parameters used for the hog features doing some test runs.
+I train a Linear SVM, using the hog and color features. I tune the parameters using the random generator.
 
-After tuning the parameters the accuracy of the model reach **0.9994**
+After tuning the parameters the accuracy of the model reach **0.9994** on the test set.
 
 ### Sliding Window Search
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-You can see the code in the section titled "Sliding Window Search". The method combines HOG and color feature extraction with a sliding window search, but rather than perform feature extraction on each window individually which can be time consuming, the HOG features are extracted for the entire image and then these full-image features are subsampled according to the size of the window and then fed to the classifier. The overlaping of bounding boxes was on 50%.
+You can see the code in the section titled **"Sliding Window Search"**. The method combines HOG and color feature extraction with a sliding window search, but rather than perform feature extraction on each window individually which can be time consuming, the HOG features are extracted for the entire image and then these full-image features are subsampled according to the size of the window and then fed to the classifier. The overlapping of bounding boxes was 50%.
 
 The method performs the classifier prediction and returns a list of boxes corresponding with the positions of the car predictions.
 
-The image below shows the first attempt at using find_cars on one of the test images, using a single window size:
+The image below shows the first attempt at using find_cars on one of the test images:
 
 ![alt text][image3]
 
 #### 2. Show some examples of test images to demonstrate how your pipeline is working.  What did you do to optimize the performance of your classifier?
 
-Ultimately I searched on three scales using a linear SVM using the hog and color features as input. The tuning of the model was done previously finding optimus parametes for the feature extraction.
+Ultimately I searched on three scales using a linear SVM using the hog and color features as input. The tuning of the model was done previously finding optimum parameters for the feature extraction.
 
-The resulting rectagles after passign the linear SVM looks like this.
+The resulting rectangles after passign the linear SVM looks like this.
 
 ![alt text][image4]
 ---
@@ -157,10 +159,10 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Most part of the implemention of the functions were on the course itself, so the main problem of the project reside on the tunning of the parameters. Thats why i build a random generator of parameters to specially tune the values used for the linear SVM. After making some runs and getting 100 different combinations of parameters i was able to choose ones that help me get an accuracy on the test set of 0.9994.
+Most part of the implementation of the functions were on the course itself, so the main problem of the project reside on the tuning of the parameters. Thats why i build a random generator of parameters to specially tune the values used for the linear SVM. After making some runs and getting 100 different combinations of parameters i was able to choose ones that help me get an accuracy on the test set of 0.9994.
 
-The model behaves well with the project video, but i doubt that it will generalize for other cases. The model will probably fail with other lighting conditions or simply usign a type of car that is not in the dataset (a truck). 
+The model behaves well with the project video, but i doubt that it will generalize for other cases. The model will probably fail with other lighting conditions or simply using a type of car that is not in the dataset (a truck). 
 
-The pipeline is able to detect and eliminate most of the false positives, there are still one or two errors in the video.
+The pipeline is able to detect and eliminate most of the false positives, but there are still some errors in the video. (Sometimes it detects cars that comes from the opposite direction, this is a positive detection)
 
-For making a more robust model it would be necesary lots of more data, with other types of vehicles in other positions and different light conditions, and of course use state of the art neural network architecture for this task.
+For making a more robust model it would be necessary lots of more data, with other types of vehicles in other positions and different light conditions, and of course use state of the art neural network architecture for this task. Creating a model that is able to generalize correctly and detect cars as supposed. 
