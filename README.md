@@ -159,7 +159,7 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Most part of the implementation of the functions were on the course itself, so the main problem of the project reside on the tuning of the parameters. Thats why i build a random generator of parameters to specially tune the values used for the linear SVM. After making some runs and getting 100 different combinations of parameters i was able to choose ones that help me get an accuracy on the test set of 0.9994.
+I think the main problem of the project reside on the tuning of the parameters. Thats why i build a random generator of parameters to specially tune the values used for the linear SVM. After making some runs and getting 100 different combinations of parameters i was able to choose ones that help me get an accuracy on the test set of 0.9994.
 
 The model behaves well with the project video, but i doubt that it will generalize for other cases. The model will probably fail with other lighting conditions or simply using a type of car that is not in the dataset (a truck). 
 
